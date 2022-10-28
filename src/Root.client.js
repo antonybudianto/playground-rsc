@@ -28,10 +28,10 @@ function Content() {
     isEditing: false,
     searchText: '',
   });
-  const response = useServerResponse(location);
+  const response = useServerResponse(location).read();
   return (
     <LocationContext.Provider value={[location, setLocation]}>
-      {response.readRoot()}
+      {response}
     </LocationContext.Provider>
   );
 }
@@ -40,7 +40,7 @@ function Error({error}) {
   return (
     <div>
       <h1>Application Error</h1>
-      <pre style={{whiteSpace: 'pre-wrap'}}>{error.stack}</pre>
+      <pre style={{whiteSpace: 'pre-wrap'}}>error</pre>
     </div>
   );
 }

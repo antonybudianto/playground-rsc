@@ -1,35 +1,38 @@
-/**
- * Copyright (c) Facebook, Inc. and its affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- *
- */
+// import {unstable_getCacheForType, unstable_useCacheRefresh} from 'react';
+import {createFromFetch} from 'react-server-dom-webpack/client';
+import wrapPromise from './use-promise';
 
-import {unstable_getCacheForType, unstable_useCacheRefresh} from 'react';
-import {createFromFetch} from 'react-server-dom-webpack';
+// function createResponseCache() {
+//   return new Map();
+// }
 
-function createResponseCache() {
-  return new Map();
-}
+// export function useRefresh() {
+//   const refreshCache = unstable_useCacheRefresh();
+//   return function refresh(key, seededResponse) {
+//     refreshCache(createResponseCache, new Map([[key, seededResponse]]));
+//   };
+// }
 
-export function useRefresh() {
-  const refreshCache = unstable_useCacheRefresh();
-  return function refresh(key, seededResponse) {
-    refreshCache(createResponseCache, new Map([[key, seededResponse]]));
-  };
-}
+let _promise;
+let _suspendedPromise;
 
 export function useServerResponse(location) {
   const key = JSON.stringify(location);
-  const cache = unstable_getCacheForType(createResponseCache);
-  let response = cache.get(key);
-  if (response) {
-    return response;
+
+  /**
+   * Not available on react@next tag...
+   */
+  // const cache = unstable_getCacheForType(createResponseCache);
+  // let response = cache.get(key);
+  // if (response) {
+  // return response;
+  // }
+
+  if (!_promise) {
+    _promise = Promise.resolve(
+      createFromFetch(fetch('/react?location=' + encodeURIComponent(key)))
+    );
+    _suspendedPromise = wrapPromise(_promise);
   }
-  response = createFromFetch(
-    fetch('/react?location=' + encodeURIComponent(key))
-  );
-  cache.set(key, response);
-  return response;
+  return _suspendedPromise;
 }
