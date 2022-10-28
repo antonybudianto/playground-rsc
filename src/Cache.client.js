@@ -1,6 +1,6 @@
 // import {unstable_getCacheForType, unstable_useCacheRefresh} from 'react';
 import {createFromFetch} from 'react-server-dom-webpack/client';
-import wrapPromise from './use-promise';
+import usePromise from './use-promise';
 
 // function createResponseCache() {
 //   return new Map();
@@ -12,9 +12,6 @@ import wrapPromise from './use-promise';
 //     refreshCache(createResponseCache, new Map([[key, seededResponse]]));
 //   };
 // }
-
-let _promise;
-let _suspendedPromise;
 
 export function useServerResponse(location) {
   const key = JSON.stringify(location);
@@ -28,11 +25,9 @@ export function useServerResponse(location) {
   // return response;
   // }
 
-  if (!_promise) {
-    _promise = Promise.resolve(
+  const cbProm = () =>
+    Promise.resolve(
       createFromFetch(fetch('/react?location=' + encodeURIComponent(key)))
     );
-    _suspendedPromise = wrapPromise(_promise);
-  }
-  return _suspendedPromise;
+  return usePromise(cbProm);
 }

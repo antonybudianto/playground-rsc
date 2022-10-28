@@ -27,4 +27,16 @@ function wrapPromise(promise) {
   return {read};
 }
 
-export default wrapPromise;
+let _promise;
+let _suspendedPromise;
+
+function usePromise(cb) {
+  if (!_promise) {
+    _promise = cb();
+    _suspendedPromise = wrapPromise(_promise);
+  }
+
+  return _suspendedPromise.read();
+}
+
+export default usePromise;

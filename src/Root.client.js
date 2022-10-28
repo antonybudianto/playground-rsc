@@ -28,7 +28,8 @@ function Content() {
     isEditing: false,
     searchText: '',
   });
-  const response = useServerResponse(location).read();
+  const response = useServerResponse(location);
+  console.log(response);
   return (
     <LocationContext.Provider value={[location, setLocation]}>
       {response}
