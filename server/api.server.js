@@ -1,12 +1,16 @@
-/**
- * Copyright (c) Facebook, Inc. and its affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- *
- */
-
 'use strict';
+
+require('isomorphic-unfetch');
+const {
+  ReadableStream,
+  TransformStream,
+} = require('web-streams-polyfill/ponyfill');
+if (!global.ReadableStream) {
+  global.ReadableStream = ReadableStream;
+}
+if (!global.TransformStream) {
+  global.TransformStream = TransformStream;
+}
 
 const register = require('react-server-dom-webpack/node-register');
 register();
@@ -23,12 +27,49 @@ const compress = require('compression');
 const {readFileSync} = require('fs');
 const {unlink, writeFile} = require('fs').promises;
 const {renderToPipeableStream} = require('react-server-dom-webpack/server');
+
+const {
+  renderToString,
+  renderToReadableStream,
+} = require('react-dom/server.browser');
+
 const path = require('path');
 const React = require('react');
+const {createFromReadableStream} = require('react-server-dom-webpack/client');
 const ReactApp = require('../src/App.server').default;
 
 const PORT = process.env.PORT || 4000;
 const app = express();
+
+function readableStreamTee(readable) {
+  const transformStream = new TransformStream();
+  const transformStream2 = new TransformStream();
+  const writer = transformStream.writable.getWriter();
+  const writer2 = transformStream2.writable.getWriter();
+
+  const reader = readable.getReader();
+  function read() {
+    reader.read().then(({done, value}) => {
+      if (done) {
+        writer.close();
+        writer2.close();
+        return;
+      }
+      writer.write(value);
+      writer2.write(value);
+      read();
+    });
+  }
+  read();
+
+  return [transformStream.readable, transformStream2.readable];
+}
+
+function decodeText(input, textDecoder) {
+  return textDecoder
+    ? textDecoder.decode(input, {stream: true})
+    : new TextDecoder().decode(input);
+}
 
 app.use(compress());
 app.use(express.json());
@@ -75,10 +116,17 @@ app.get(
       path.resolve(__dirname, '../build/index.html'),
       'utf8'
     );
-    // Note: this is sending an empty HTML shell, like a client-side-only app.
-    // However, the intended solution (which isn't built out yet) is to read
-    // from the Server endpoint and turn its response into an HTML stream.
-    res.send(html);
+
+    // const tmpKey = JSON.stringify({});
+    const stream = await getStream(res, {});
+    await stream.allReady;
+    const str = await streamToString(stream);
+    // const [renderStream, forwardStream] = readableStreamTee(stream);
+    // const v = createFromReadableStream(renderStream);
+    // console.log('v', v);
+    console.log('str12', str);
+    const finalHtml = html.replace('{{ssr}}', str);
+    res.send(finalHtml);
   })
 );
 
@@ -94,6 +142,37 @@ async function renderReactTree(res, props) {
     moduleMap
   );
   pipe(res);
+}
+
+async function streamToString(stream) {
+  const reader = stream.getReader();
+  const textDecoder = new TextDecoder();
+
+  let bufferedString = '';
+
+  while (true) {
+    const {done, value} = await reader.read();
+
+    if (done) {
+      return bufferedString;
+    }
+
+    bufferedString += decodeText(value, textDecoder);
+  }
+}
+
+async function getStream(res, props) {
+  await waitForWebpack();
+  const manifest = readFileSync(
+    path.resolve(__dirname, '../build/react-client-manifest.json'),
+    'utf8'
+  );
+  const moduleMap = JSON.parse(manifest);
+  const stream = renderToReadableStream(
+    React.createElement(ReactApp, props),
+    moduleMap
+  );
+  return stream;
 }
 
 function sendResponse(req, res, redirectToId) {

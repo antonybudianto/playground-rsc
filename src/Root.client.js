@@ -14,11 +14,11 @@ import {LocationContext} from './LocationContext.client';
 
 export default function Root({initialCache}) {
   return (
-    <Suspense fallback={null}>
-      <ErrorBoundary FallbackComponent={Error}>
-        <Content />
-      </ErrorBoundary>
-    </Suspense>
+    // <Suspense fallback={null}>
+    //   <ErrorBoundary FallbackComponent={Error}>
+    <Content />
+    //   </ErrorBoundary>
+    // </Suspense>
   );
 }
 

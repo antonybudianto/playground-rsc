@@ -6,12 +6,16 @@
  *
  */
 
-import {createRoot} from 'react-dom/client';
+import {hydrateRoot} from 'react-dom/client';
 import Root from './Root.client';
 
 const initialCache = new Map();
-const root = createRoot(document.getElementById('root'));
-root.render(<Root initialCache={initialCache} />);
+hydrateRoot(
+  document.getElementById('root'),
+  <Root initialCache={initialCache} />
+);
+// const root = createRoot(document.getElementById('root'));
+// root.render(<Root initialCache={initialCache} />);
 
 // Note: in this example, the initial page is rendered on the client.
 // However, the intended solution (which isn't built out yet) is to
