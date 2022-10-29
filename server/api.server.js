@@ -2,8 +2,8 @@
 
 require('./polyfill')();
 
-// const register = require('react-server-dom-webpack/node-register');
-// register();
+const register = require('react-server-dom-webpack/node-register');
+register();
 const babelRegister = require('@babel/register');
 
 babelRegister({
