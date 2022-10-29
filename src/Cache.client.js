@@ -1,17 +1,20 @@
-// import {unstable_getCacheForType, unstable_useCacheRefresh} from 'react';
-import {createFromFetch} from 'react-server-dom-webpack/client';
+import {
+  createFromFetch,
+  createFromReadableStream,
+} from 'react-server-dom-webpack/client';
 import usePromise from './use-promise';
 
-// function createResponseCache() {
-//   return new Map();
-// }
-
-// export function useRefresh() {
-//   const refreshCache = unstable_useCacheRefresh();
-//   return function refresh(key, seededResponse) {
-//     refreshCache(createResponseCache, new Map([[key, seededResponse]]));
-//   };
-// }
+/**
+ *
+ * @TODO Still don't know the proper way to hydrate this yet :'D
+ * Need to create readable stream from string...
+ */
+function getHydratedUrl() {
+  const __RSC = window.__rsc;
+  const blob = new Blob([__RSC], {type: 'text/plain; charset=utf-8'});
+  const url = window.URL.createObjectURL(blob);
+  return url;
+}
 
 export function useServerResponse(location) {
   const key = JSON.stringify(location);
@@ -25,9 +28,11 @@ export function useServerResponse(location) {
   // return response;
   // }
 
-  const cbProm = () =>
-    Promise.resolve(
-      createFromFetch(fetch('/react?location=' + encodeURIComponent(key)))
-    );
+  const cbProm = () => {
+    let p = window.__rsc
+      ? createFromFetch(fetch(getHydratedUrl()))
+      : createFromFetch(fetch('/react?location=' + encodeURIComponent(key)));
+    return Promise.resolve(p);
+  };
   return usePromise(cbProm);
 }

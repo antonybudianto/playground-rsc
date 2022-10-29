@@ -26,16 +26,15 @@ const express = require('express');
 const compress = require('compression');
 const {readFileSync} = require('fs');
 const {unlink, writeFile} = require('fs').promises;
-const {renderToPipeableStream} = require('react-server-dom-webpack/server');
 
-const {
-  renderToString,
-  renderToReadableStream,
-} = require('react-dom/server.browser');
+const {renderToPipeableStream} = require('react-dom/server');
 
 const path = require('path');
 const React = require('react');
 const {createFromReadableStream} = require('react-server-dom-webpack/client');
+const {
+  renderToReadableStream,
+} = require('react-server-dom-webpack/server.browser');
 const ReactApp = require('../src/App.server').default;
 
 const PORT = process.env.PORT || 4000;
@@ -108,6 +107,23 @@ function handleErrors(fn) {
   };
 }
 
+async function getHydratedReactEl(forwardReader) {
+  return new Promise((resolve) => {
+    let responsePartial;
+    function readForward() {
+      forwardReader.read().then(({done, value}) => {
+        if (done) {
+          resolve(responsePartial);
+        } else {
+          responsePartial = decodeText(value);
+          readForward();
+        }
+      });
+    }
+    readForward();
+  });
+}
+
 app.get(
   '/',
   handleErrors(async function(_req, res) {
@@ -116,17 +132,29 @@ app.get(
       path.resolve(__dirname, '../build/index.html'),
       'utf8'
     );
+    const segments = html.split(`<div id="root">`);
 
     // const tmpKey = JSON.stringify({});
     const stream = await getStream(res, {});
-    await stream.allReady;
-    const str = await streamToString(stream);
-    // const [renderStream, forwardStream] = readableStreamTee(stream);
-    // const v = createFromReadableStream(renderStream);
-    // console.log('v', v);
-    console.log('str12', str);
-    const finalHtml = html.replace('{{ssr}}', str);
-    res.send(finalHtml);
+    const [renderStream, forwardStream] = readableStreamTee(stream);
+    await renderStream.allReady;
+    const reactEl = await createFromReadableStream(renderStream);
+
+    const forwardReader = forwardStream.getReader();
+    const hydratedStr = await getHydratedReactEl(forwardReader);
+
+    const ssrStream = renderToPipeableStream(reactEl, {
+      onAllReady() {
+        res.write(segments[0] + `<div id="root">`);
+        ssrStream.pipe(res);
+        res.write(
+          `<script type="text/javascript">window.__rsc=${JSON.stringify(
+            hydratedStr
+          )}</script>`
+        );
+        res.write(segments[1]);
+      },
+    });
   })
 );
 
@@ -137,28 +165,19 @@ async function renderReactTree(res, props) {
     'utf8'
   );
   const moduleMap = JSON.parse(manifest);
-  const {pipe} = renderToPipeableStream(
-    React.createElement(ReactApp, props),
-    moduleMap
-  );
-  pipe(res);
-}
-
-async function streamToString(stream) {
-  const reader = stream.getReader();
-  const textDecoder = new TextDecoder();
-
-  let bufferedString = '';
-
-  while (true) {
-    const {done, value} = await reader.read();
-
-    if (done) {
-      return bufferedString;
-    }
-
-    bufferedString += decodeText(value, textDecoder);
+  const stream = await getStream(res, props);
+  const reader = await stream.getReader();
+  function readForward() {
+    reader.read().then(({done, value}) => {
+      if (done) {
+        res.end();
+      } else {
+        let responsePartial = decodeText(value);
+        res.write(responsePartial);
+      }
+    });
   }
+  readForward();
 }
 
 async function getStream(res, props) {
