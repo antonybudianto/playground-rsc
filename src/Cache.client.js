@@ -1,19 +1,21 @@
-import {
-  createFromFetch,
-  createFromReadableStream,
-} from 'react-server-dom-webpack/client';
+import {createFromFetch} from 'react-server-dom-webpack/client';
 import usePromise from './use-promise';
 
 /**
- *
- * @TODO Still don't know the proper way to hydrate this yet :'D
- * Need to create readable stream from string...
+ * @TODO
+ * Need to create readable stream from hydrated string and pass to React.createFromFetch....
+ * Not sure if this is the correct way, but it works :D
  */
-function getHydratedUrl() {
-  const __RSC = window.__rsc;
-  const blob = new Blob([__RSC], {type: 'text/plain; charset=utf-8'});
-  const url = window.URL.createObjectURL(blob);
-  return url;
+async function getHydratedStreamResp() {
+  return new Response(
+    new ReadableStream({
+      start(controller) {
+        const encoder = new TextEncoder();
+        const enc = encoder.encode(window.__rsc);
+        controller.enqueue(enc);
+      },
+    })
+  );
 }
 
 export function useServerResponse(location) {
@@ -30,7 +32,7 @@ export function useServerResponse(location) {
 
   const cbProm = () => {
     let p = window.__rsc
-      ? createFromFetch(fetch(getHydratedUrl()))
+      ? createFromFetch(getHydratedStreamResp())
       : createFromFetch(fetch('/react?location=' + encodeURIComponent(key)));
     return Promise.resolve(p);
   };
