@@ -1,19 +1,9 @@
 'use strict';
 
-require('isomorphic-unfetch');
-const {
-  ReadableStream,
-  TransformStream,
-} = require('web-streams-polyfill/ponyfill');
-if (!global.ReadableStream) {
-  global.ReadableStream = ReadableStream;
-}
-if (!global.TransformStream) {
-  global.TransformStream = TransformStream;
-}
+require('./polyfill')();
 
-const register = require('react-server-dom-webpack/node-register');
-register();
+// const register = require('react-server-dom-webpack/node-register');
+// register();
 const babelRegister = require('@babel/register');
 
 babelRegister({
@@ -25,50 +15,23 @@ babelRegister({
 const express = require('express');
 const compress = require('compression');
 const {readFileSync} = require('fs');
-const {unlink, writeFile} = require('fs').promises;
-
 const {renderToPipeableStream} = require('react-dom/server');
-
 const path = require('path');
 const React = require('react');
 const {createFromReadableStream} = require('react-server-dom-webpack/client');
 const {
   renderToReadableStream,
 } = require('react-server-dom-webpack/server.browser');
+const {
+  decodeText,
+  getHydratedReactEl,
+  readableStreamTee,
+  handleErrors,
+} = require('./util');
 const ReactApp = require('../src/App.server').default;
 
 const PORT = process.env.PORT || 4000;
 const app = express();
-
-function readableStreamTee(readable) {
-  const transformStream = new TransformStream();
-  const transformStream2 = new TransformStream();
-  const writer = transformStream.writable.getWriter();
-  const writer2 = transformStream2.writable.getWriter();
-
-  const reader = readable.getReader();
-  function read() {
-    reader.read().then(({done, value}) => {
-      if (done) {
-        writer.close();
-        writer2.close();
-        return;
-      }
-      writer.write(value);
-      writer2.write(value);
-      read();
-    });
-  }
-  read();
-
-  return [transformStream.readable, transformStream2.readable];
-}
-
-function decodeText(input, textDecoder) {
-  return textDecoder
-    ? textDecoder.decode(input, {stream: true})
-    : new TextDecoder().decode(input);
-}
 
 app.use(compress());
 app.use(express.json());
@@ -96,33 +59,6 @@ app
         throw error;
     }
   });
-
-function handleErrors(fn) {
-  return async function(req, res, next) {
-    try {
-      return await fn(req, res);
-    } catch (x) {
-      next(x);
-    }
-  };
-}
-
-async function getHydratedReactEl(forwardReader) {
-  return new Promise((resolve) => {
-    let responsePartial;
-    function readForward() {
-      forwardReader.read().then(({done, value}) => {
-        if (done) {
-          resolve(responsePartial);
-        } else {
-          responsePartial = decodeText(value);
-          readForward();
-        }
-      });
-    }
-    readForward();
-  });
-}
 
 app.get(
   '/',
@@ -158,13 +94,21 @@ app.get(
   })
 );
 
-async function renderReactTree(res, props) {
+async function getStream(res, props) {
   await waitForWebpack();
   const manifest = readFileSync(
     path.resolve(__dirname, '../build/react-client-manifest.json'),
     'utf8'
   );
   const moduleMap = JSON.parse(manifest);
+  const stream = renderToReadableStream(
+    React.createElement(ReactApp, props),
+    moduleMap
+  );
+  return stream;
+}
+
+async function renderReactTree(res, props) {
   const stream = await getStream(res, props);
   const reader = await stream.getReader();
   function readForward() {
@@ -178,20 +122,6 @@ async function renderReactTree(res, props) {
     });
   }
   readForward();
-}
-
-async function getStream(res, props) {
-  await waitForWebpack();
-  const manifest = readFileSync(
-    path.resolve(__dirname, '../build/react-client-manifest.json'),
-    'utf8'
-  );
-  const moduleMap = JSON.parse(manifest);
-  const stream = renderToReadableStream(
-    React.createElement(ReactApp, props),
-    moduleMap
-  );
-  return stream;
 }
 
 function sendResponse(req, res, redirectToId) {
