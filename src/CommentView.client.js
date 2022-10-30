@@ -13,12 +13,12 @@ export default function CommentView() {
   }, []);
 
   const handleClick = () => {
-    console.log('click');
+    window.alert('click');
   };
 
   return (
     <div>
-      <div> Client component</div>
+      <div>Client component</div>
       <button onClick={handleClick}>click</button>
     </div>
   );

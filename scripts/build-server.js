@@ -5,7 +5,6 @@ const path = require('path');
 const webpack = require('webpack');
 const NodemonPlugin = require('nodemon-webpack-plugin');
 const nodeExternals = require('webpack-node-externals');
-const ReactServerWebpackPlugin = require('react-server-dom-webpack/plugin');
 
 const isProduction = process.env.NODE_ENV === 'production';
 
@@ -47,7 +46,6 @@ const config = {
   },
 
   plugins: [
-    new ReactServerWebpackPlugin({isServer: false}),
     new NodemonPlugin({
       watch: path.resolve(__dirname, '../build'),
       nodeArgs: ['--conditions=react-server'],

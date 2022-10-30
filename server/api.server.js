@@ -8,24 +8,16 @@ const express = require('express');
 const compress = require('compression');
 const React = require('react');
 
-const rs = require('../src/CommentView.client');
-// const rs2 = require('../src/FeedView.server');
-if (!global.__webpack_require__) {
-  global.__webpack_require__ = (id) => {
-    console.log(rs);
-    console.log(id);
-    // return rs;
-    return {
-      default: () => null,
-    };
-  };
-}
+/**
+ * Usual React SSR
+ */
+const {renderToPipeableStream} = require('react-dom/server');
 
 /**
  * @TODO should be this one? but got connection error.
  * This is for rendering reactEl to stream
  */
-// const {renderToReadableStream} = require('react-dom/server.browser');
+// const {renderToReadableStream: rtr} = require('react-dom/server.browser');
 const {
   renderToReadableStream,
 } = require('react-server-dom-webpack/server.browser');
@@ -35,10 +27,6 @@ const {
  */
 const {createFromReadableStream} = require('react-server-dom-webpack/client');
 
-/**
- * Usual React SSR
- */
-const {renderToPipeableStream} = require('react-dom/server');
 const {
   decodeText,
   getHydratedReactEl,
@@ -50,6 +38,23 @@ const {
  * Our root App
  */
 const ReactApp = require('../src/App.server').default;
+
+/**
+ * @TODO hackaround for client component on ssr ....
+ */
+const _wpr = __webpack_require__;
+if (!global.__webpack_require__) {
+  global.__webpack_require__ = (id) => {
+    // const Comp = _wpr(id);
+    console.log(id);
+    console.log(
+      'ERR: client component cannot be SSR yet. fallback to null for now\n'
+    );
+    return {
+      default: () => null,
+    };
+  };
+}
 
 (async () => {
   const PORT = process.env.PORT || 4000;
@@ -84,14 +89,14 @@ const ReactApp = require('../src/App.server').default;
   app.get(
     '/',
     handleErrors(async function(_req, res) {
-      await waitForWebpack();
+      // await waitForWebpack();
       const html = readFileSync(
         path.resolve(__dirname, '../build/index.html'),
         'utf8'
       );
       const segments = html.split(`<div id="root">`);
 
-      console.log('>>getStream');
+      console.log('>>getStream:renderToReadableStream');
       const stream = await getStream(res, {});
 
       const [renderStream, forwardStream] = readableStreamTee(stream);
@@ -120,7 +125,7 @@ const ReactApp = require('../src/App.server').default;
   );
 
   async function getStream(res, props) {
-    await waitForWebpack();
+    // await waitForWebpack();
     const manifest = readFileSync(
       path.resolve(__dirname, '../build/react-client-manifest.json'),
       'utf8'
