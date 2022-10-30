@@ -97,7 +97,7 @@ if (!global.__webpack_require__) {
     await waitForWebpack();
     app
       .listen(PORT, () => {
-        console.log(`React Notes listening at ${PORT}...`);
+        console.log(`React Notes running at http://localhost:${PORT}...`);
       })
       .on('error', function(error) {
         if (error.syscall !== 'listen') {
