@@ -45,16 +45,30 @@ const ReactApp = require('../src/App.server').default;
  * However this is only for learning how RSC x SSR integrated, DON'T use this code on PRODUCTION!!!
  */
 let CM = {};
-try {
-  CM = require('../build/client-manifest').default;
-} catch (e) {
-  console.error('ERROR-CM:', e);
+
+function loadCM() {
+  try {
+    CM = require('../build/client-manifest').default;
+  } catch (e) {
+    console.error('ERROR-CM:', e);
+  }
 }
-const _wpr = __webpack_require__;
+
+if (process.env.NODE_ENV === 'production') {
+  loadCM();
+}
+
 if (!global.__webpack_require__) {
   global.__webpack_require__ = (id) => {
-    const CompMeta = _wpr(`${id}`);
-    const CompCb = CM[CompMeta.default.filepath];
+    /**
+     * We need to keep CM updated during development
+     */
+    if (process.env.NODE_ENV === 'development') {
+      console.log('>>Reloading client-manifest.js ...');
+      loadCM();
+    }
+
+    const CompCb = CM[`${id}`];
 
     /**
      * If not found, just render null on server, but it'll cause hydration warnings...
@@ -77,29 +91,34 @@ if (!global.__webpack_require__) {
   app.use(compress());
   app.use(express.json());
 
-  app
-    .listen(PORT, () => {
-      console.log(`React Notes listening at ${PORT}...`);
-    })
-    .on('error', function(error) {
-      if (error.syscall !== 'listen') {
-        throw error;
-      }
-      const isPipe = (portOrPipe) => Number.isNaN(portOrPipe);
-      const bind = isPipe(PORT) ? 'Pipe ' + PORT : 'Port ' + PORT;
-      switch (error.code) {
-        case 'EACCES':
-          console.error(bind + ' requires elevated privileges');
-          process.exit(1);
-          break;
-        case 'EADDRINUSE':
-          console.error(bind + ' is already in use');
-          process.exit(1);
-          break;
-        default:
+  runServer();
+
+  async function runServer() {
+    await waitForWebpack();
+    app
+      .listen(PORT, () => {
+        console.log(`React Notes listening at ${PORT}...`);
+      })
+      .on('error', function(error) {
+        if (error.syscall !== 'listen') {
           throw error;
-      }
-    });
+        }
+        const isPipe = (portOrPipe) => Number.isNaN(portOrPipe);
+        const bind = isPipe(PORT) ? 'Pipe ' + PORT : 'Port ' + PORT;
+        switch (error.code) {
+          case 'EACCES':
+            console.error(bind + ' requires elevated privileges');
+            process.exit(1);
+            break;
+          case 'EADDRINUSE':
+            console.error(bind + ' is already in use');
+            process.exit(1);
+            break;
+          default:
+            throw error;
+        }
+      });
+  }
 
   app.get(
     '/',
@@ -199,6 +218,10 @@ if (!global.__webpack_require__) {
     while (true) {
       try {
         readFileSync(path.resolve(__dirname, '../build/index.html'));
+        if (process.env.NODE_ENV === 'development') {
+          const generate = require('../manifestGenerator');
+          generate();
+        }
         return;
       } catch (err) {
         console.log(

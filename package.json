@@ -49,15 +49,15 @@
     "prettier": "1.19.1"
   },
   "scripts": {
-    "bs": "npm run gen && npm run plugin",
     "gen": "node manifestGenerator.js",
-    "start": "concurrently \"npm run bundler:dev\" \"npm run bundler:server\"",
-    "start:prod": "concurrently \"npm run server:prod\" \"npm run bundler:prod\"",
-    "server:dev2": "cross-env NODE_ENV=development nodemon -- --conditions=react-server server",
-    "server:prod": "cross-env NODE_ENV=production nodemon -- --conditions=react-server server",
-    "bundler:dev": "cross-env NODE_ENV=development webpack --watch --config=./scripts/build.js",
+    "start": "concurrently \"npm run bundler:client\" \"npm run bundler:server\"",
+    "bundler:client": "cross-env NODE_ENV=development webpack --watch --config=./scripts/build.js",
     "bundler:server": "cross-env NODE_ENV=development webpack --watch --config=./scripts/build-server.js",
-    "bundler:prod": "cross-env NODE_ENV=production nodemon -- scripts/build.js",
+    "gen:prod": "cross-env NODE_ENV=production CI=1 node manifestGenerator.js",
+    "build:prod": "npm run client:prod && npm run gen:prod && npm run server:prod",
+    "client:prod": "cross-env NODE_ENV=production webpack --config=./scripts/build.js",
+    "server:prod": "cross-env NODE_ENV=production webpack --config=./scripts/build-server.js",
+    "start:prod": "cross-env NODE_ENV=production node build/server",
     "plugin": "NODE_ENV=development babel --extensions \\\".es6,.js,.es,.jsx,.mjs,.ts,.tsx\\\" --watch plugin/**.ts --out-dir ./plugin",
     "prettier": "prettier --write **/*.js"
   }

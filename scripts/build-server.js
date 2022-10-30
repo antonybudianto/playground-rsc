@@ -48,8 +48,9 @@ const config = {
 
   plugins: [
     new NodemonPlugin({
-      watch: path.resolve(__dirname, '../build'),
+      watch: path.resolve(__dirname, '../build/server.js'),
       // nodeArgs: ['--conditions=react-server'],
+      ignore: ['build/client-manifest.js'],
       env: {
         NODE_ENV: 'development',
       },
