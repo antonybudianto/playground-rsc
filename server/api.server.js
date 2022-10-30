@@ -45,14 +45,15 @@ const ReactApp = require('../src/App.server').default;
 const _wpr = __webpack_require__;
 if (!global.__webpack_require__) {
   global.__webpack_require__ = (id) => {
-    // const Comp = _wpr(id);
+    // const Comp = _wpr(`${id}`); // inline wont work
+    // const Comp = require(path.resolve(__dirname, '..', id)); // inline wont work
+    const Comp = require('../src/CommentView.client.js?inline'); // only this works...
+    console.log(Comp.default);
     console.log(id);
     console.log(
       'ERR: client component cannot be SSR yet. fallback to null for now\n'
     );
-    return {
-      default: () => null,
-    };
+    return Comp;
   };
 }
 

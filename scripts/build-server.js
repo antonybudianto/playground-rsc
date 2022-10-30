@@ -27,6 +27,7 @@ const config = {
       },
       {
         test: /\.client.(js|jsx|ts|tsx)?$/,
+        resourceQuery: /^((?!inline).)*$/,
         use: [
           {
             loader: require.resolve('../plugin/ReactFlightWebpackLoader'),
@@ -48,7 +49,7 @@ const config = {
   plugins: [
     new NodemonPlugin({
       watch: path.resolve(__dirname, '../build'),
-      nodeArgs: ['--conditions=react-server'],
+      // nodeArgs: ['--conditions=react-server'],
       env: {
         NODE_ENV: 'development',
       },
