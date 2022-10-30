@@ -49,6 +49,8 @@
     "prettier": "1.19.1"
   },
   "scripts": {
+    "bs": "npm run gen && npm run plugin",
+    "gen": "node manifestGenerator.js",
     "start": "concurrently \"npm run bundler:dev\" \"npm run bundler:server\"",
     "start:prod": "concurrently \"npm run server:prod\" \"npm run bundler:prod\"",
     "server:dev2": "cross-env NODE_ENV=development nodemon -- --conditions=react-server server",
@@ -57,7 +59,6 @@
     "bundler:server": "cross-env NODE_ENV=development webpack --watch --config=./scripts/build-server.js",
     "bundler:prod": "cross-env NODE_ENV=production nodemon -- scripts/build.js",
     "plugin": "NODE_ENV=development babel --extensions \\\".es6,.js,.es,.jsx,.mjs,.ts,.tsx\\\" --watch plugin/**.ts --out-dir ./plugin",
-    "prettier": "prettier --write **/*.js",
-    "seed": "node ./scripts/seed.js"
+    "prettier": "prettier --write **/*.js"
   }
 }

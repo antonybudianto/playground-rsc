@@ -23,9 +23,5 @@ export default function(source) {
     newSrc += '};\n';
   }
 
-  console.log({
-    newSrc,
-  });
-
   return newSrc;
 }

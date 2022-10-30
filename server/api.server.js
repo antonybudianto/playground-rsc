@@ -41,18 +41,32 @@ const ReactApp = require('../src/App.server').default;
 
 /**
  * @TODO hackaround for client component on ssr ....
+ * This might not work on production, need to test.
+ * However this is only for learning how RSC x SSR integrated, DON'T use this code on PRODUCTION!!!
  */
+let CM = {};
+try {
+  CM = require('../build/client-manifest').default;
+} catch (e) {
+  console.error('ERROR-CM:', e);
+}
 const _wpr = __webpack_require__;
 if (!global.__webpack_require__) {
   global.__webpack_require__ = (id) => {
-    // const Comp = _wpr(`${id}`); // inline wont work
-    // const Comp = require(path.resolve(__dirname, '..', id)); // inline wont work
-    const Comp = require('../src/CommentView.client.js?inline'); // only this works...
-    console.log(Comp.default);
-    console.log(id);
-    console.log(
-      'ERR: client component cannot be SSR yet. fallback to null for now\n'
-    );
+    const CompMeta = _wpr(`${id}`);
+    const CompCb = CM[CompMeta.default.filepath];
+
+    /**
+     * If not found, just render null on server, but it'll cause hydration warnings...
+     */
+    if (!CompCb || typeof CompCb !== 'function') {
+      return {
+        default: () => null,
+      };
+    }
+
+    const Comp = CompCb();
+    console.log(`>>Request to client component success: ${id}`);
     return Comp;
   };
 }
