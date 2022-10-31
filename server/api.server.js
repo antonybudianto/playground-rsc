@@ -46,6 +46,9 @@ const ReactApp = require('../src/App.server').default;
  */
 let CM = {};
 
+let html = '';
+let reactManifest;
+
 function loadCM() {
   try {
     CM = require('../build/client-manifest').default;
@@ -54,8 +57,26 @@ function loadCM() {
   }
 }
 
+function loadHTML() {
+  const html = readFileSync(
+    path.resolve(__dirname, '../build/index.html'),
+    'utf8'
+  );
+  return html;
+}
+
+function loadReactManifest() {
+  const manifest = readFileSync(
+    path.resolve(__dirname, '../build/react-client-manifest.json'),
+    'utf8'
+  );
+  return manifest;
+}
+
 if (process.env.NODE_ENV === 'production') {
   loadCM();
+  html = loadHTML();
+  reactManifest = loadReactManifest();
 }
 
 if (!global.__webpack_require__) {
@@ -114,11 +135,10 @@ async function runServer() {
   app.get(
     '/',
     handleErrors(async function(_req, res) {
-      // await waitForWebpack();
-      const html = readFileSync(
-        path.resolve(__dirname, '../build/index.html'),
-        'utf8'
-      );
+      if (process.env.NODE_ENV === 'development') {
+        html = loadHTML();
+      }
+
       const segments = html.split(`<div id="root">`);
 
       console.log('>>getStream:renderToReadableStream');
@@ -150,12 +170,10 @@ async function runServer() {
   );
 
   async function getStream(res, props) {
-    // await waitForWebpack();
-    const manifest = readFileSync(
-      path.resolve(__dirname, '../build/react-client-manifest.json'),
-      'utf8'
-    );
-    const moduleMap = JSON.parse(manifest);
+    if (process.env.NODE_ENV === 'development') {
+      reactManifest = loadReactManifest();
+    }
+    const moduleMap = JSON.parse(reactManifest);
     const stream = renderToReadableStream(
       React.createElement(ReactApp, props),
       moduleMap
