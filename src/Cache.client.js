@@ -20,7 +20,6 @@ async function getHydratedStreamResp() {
 
 export function useServerResponse(location) {
   const key = JSON.stringify(location);
-  console.log(key);
   /**
    * Not available on react@next tag...
    */
