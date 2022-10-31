@@ -7,7 +7,7 @@ export default function App() {
   return (
     <div className="main">
       {/* <Suspense fallback={<div>loading...</div>}> */}
-      <div>Hello, test</div>
+      <div>Hello, server component here</div>
       <FeedView />
       <CommentView />
       {/* </Suspense> */}

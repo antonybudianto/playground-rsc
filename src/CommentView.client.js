@@ -1,19 +1,24 @@
 // 'use client';
 
-import {useEffect} from 'react';
+import {useEffect, useState} from 'react';
 
 export default function CommentView() {
   useEffect(() => {
-    console.log('test');
+    console.log('test useeffect didmount');
   }, []);
 
+  const [count, setCount] = useState(0);
+
   const handleClick = () => {
-    window.alert('click');
+    setCount((c) => c + 1);
   };
 
   return (
-    <div>
-      <div>Client component</div>
+    <div
+      style={{
+        marginTop: '10px',
+      }}>
+      <div>CommentView. client component. count:{count}</div>
       <button onClick={handleClick}>click</button>
     </div>
   );

@@ -1,3 +1,3 @@
 export default function FeedView() {
-  return <div>FeedView - Server Component-</div>;
+  return <div>FeedView - server component - {new Date().getFullYear()}-</div>;
 }

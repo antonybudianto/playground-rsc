@@ -2,7 +2,7 @@
 
 require('./polyfill')();
 
-const {readFileSync} = require('fs');
+const {readFileSync, existsSync} = require('fs');
 const path = require('path');
 const express = require('express');
 const compress = require('compression');
@@ -60,14 +60,6 @@ if (process.env.NODE_ENV === 'production') {
 
 if (!global.__webpack_require__) {
   global.__webpack_require__ = (id) => {
-    /**
-     * We need to keep CM updated during development
-     */
-    if (process.env.NODE_ENV === 'development') {
-      console.log('>>Reloading client-manifest.js ...');
-      loadCM();
-    }
-
     const CompCb = CM[`${id}`];
 
     /**
@@ -85,7 +77,7 @@ if (!global.__webpack_require__) {
   };
 }
 
-(async () => {
+async function runServer() {
   const PORT = process.env.PORT || 4000;
   const app = express();
   app.use(compress());
@@ -94,7 +86,6 @@ if (!global.__webpack_require__) {
   runServer();
 
   async function runServer() {
-    await waitForWebpack();
     app
       .listen(PORT, () => {
         console.log(`React Notes running at http://localhost:${PORT}...`);
@@ -213,23 +204,47 @@ if (!global.__webpack_require__) {
 
   app.use(express.static('build'));
   app.use(express.static('public'));
+}
 
-  async function waitForWebpack() {
-    while (true) {
-      try {
-        readFileSync(path.resolve(__dirname, '../build/index.html'));
-        if (process.env.NODE_ENV === 'development') {
-          const generate = require('../manifestGenerator');
-          generate();
-        }
-        return;
-      } catch (err) {
-        console.log(
-          'Could not find webpack build output. Will retry in a second...'
-          // err
-        );
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+async function waitForWebpack() {
+  while (true) {
+    try {
+      const jsonMReady = existsSync(
+        path.resolve(__dirname, '../build/react-client-manifest.json')
+      );
+      if (!jsonMReady) {
+        throw Error('waiting');
       }
+      const generate = require('../manifestGenerator');
+      generate();
+      return;
+    } catch (err) {
+      console.log(
+        'Could not find webpack build output. Will retry in a second...'
+        // err
+      );
+      await new Promise((resolve) => setTimeout(resolve, 1000));
     }
   }
+}
+
+const wait = async (ms) => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve();
+    }, ms);
+  });
+};
+
+(async () => {
+  if (process.env.NODE_ENV === 'development') {
+    console.log('============================');
+    console.log('= NOT FOR PRODUCTION ! ! ! =');
+    console.log('= Only for experimenting   =');
+    console.log('============================');
+    await waitForWebpack();
+    await wait(1000);
+  }
+  loadCM();
+  runServer();
 })();
