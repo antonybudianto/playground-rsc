@@ -18,22 +18,24 @@ async function getHydratedStreamResp() {
   );
 }
 
-export function useServerResponse(location) {
-  const key = JSON.stringify(location);
-  /**
-   * Not available on react@next tag...
-   */
-  // const cache = unstable_getCacheForType(createResponseCache);
-  // let response = cache.get(key);
-  // if (response) {
-  // return response;
-  // }
+function hydrate() {
+  console.log('==hydrate');
+  return createFromFetch(getHydratedStreamResp());
+}
 
+export function useServerResponse({key, cache}) {
   const cbProm = () => {
     let p = window.__rsc
-      ? createFromFetch(getHydratedStreamResp())
+      ? hydrate()
       : createFromFetch(fetch('/react?location=' + encodeURIComponent(key)));
     return Promise.resolve(p);
   };
-  return usePromise(cbProm);
+
+  /**
+   * @TODO
+   * replace with `React.use(cbProm)` when it's available...
+   */
+  const el = usePromise(cbProm);
+  cache.set(key, el);
+  return el;
 }
