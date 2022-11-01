@@ -1,3 +1,4 @@
+import {useCallback} from 'react';
 import {createFromFetch} from 'react-server-dom-webpack/client';
 import usePromise from './use-promise';
 
@@ -24,12 +25,12 @@ function hydrate() {
 }
 
 export function useServerResponse({key, cache}) {
-  const cbProm = () => {
+  const cbProm = useCallback(() => {
     let p = window.__rsc
       ? hydrate()
       : createFromFetch(fetch('/react?location=' + encodeURIComponent(key)));
     return Promise.resolve(p);
-  };
+  }, [key]);
 
   /**
    * @TODO
