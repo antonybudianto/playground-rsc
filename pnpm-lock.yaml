@@ -27,10 +27,10 @@ specifiers:
   nodemon: ^2.0.6
   nodemon-webpack-plugin: 4.8.1
   prettier: 1.19.1
-  react: 18.3.0-next-28a574ea8-20221027
-  react-dom: 18.3.0-next-28a574ea8-20221027
+  react: 18.3.0-next-4bd245e9e-20221104
+  react-dom: 18.3.0-next-4bd245e9e-20221104
   react-error-boundary: ^3.1.0
-  react-server-dom-webpack: 18.3.0-next-28a574ea8-20221027
+  react-server-dom-webpack: 18.3.0-next-4bd245e9e-20221104
   resolve: 1.12.0
   rimraf: ^3.0.2
   sanitize-html: ^2.2.0
@@ -64,10 +64,10 @@ dependencies:
   marked: 1.2.9
   nodemon: 2.0.20
   nodemon-webpack-plugin: 4.8.1_webpack@5.64.4
-  react: 18.3.0-next-28a574ea8-20221027
-  react-dom: 18.3.0-next-28a574ea8-20221027_f6630db1e671a3c9301025abb8bbce1c
-  react-error-boundary: 3.1.4_f6630db1e671a3c9301025abb8bbce1c
-  react-server-dom-webpack: 18.3.0-next-28a574ea8-20221027_d1634c9418cc936aca097149c56072a8
+  react: 18.3.0-next-4bd245e9e-20221104
+  react-dom: 18.3.0-next-4bd245e9e-20221104_18eabe7b97f85e4a13f5029e0ab76971
+  react-error-boundary: 3.1.4_18eabe7b97f85e4a13f5029e0ab76971
+  react-server-dom-webpack: 18.3.0-next-4bd245e9e-20221104_7620e6548e5cbebbf9ec8f14bbc734b8
   resolve: 1.12.0
   rimraf: 3.0.2
   sanitize-html: 2.7.3
@@ -3840,44 +3840,44 @@ packages:
       unpipe: 1.0.0
     dev: false
 
-  /react-dom/18.3.0-next-28a574ea8-20221027_f6630db1e671a3c9301025abb8bbce1c:
-    resolution: {integrity: sha512-f0CkrX744dPYQ5ilIfakH9HViwsHOuiXQ62h8b8tcrzbc1flnYO9ESMlBjw7gQuWxYz2Zdbx551yuq7FUekjGQ==}
+  /react-dom/18.3.0-next-4bd245e9e-20221104_18eabe7b97f85e4a13f5029e0ab76971:
+    resolution: {integrity: sha512-zumqH3nDT0a5PYEgwatI6YJiC1yf9/Xje92sSQwUEMn6XxhxG00E/SYxLl64e8ZvulI2MxyjkhTPv4w+tuWW0g==}
     peerDependencies:
-      react: 18.3.0-next-28a574ea8-20221027
+      react: 18.3.0-next-4bd245e9e-20221104
     dependencies:
       loose-envify: 1.4.0
-      react: 18.3.0-next-28a574ea8-20221027
-      scheduler: 0.24.0-next-28a574ea8-20221027
+      react: 18.3.0-next-4bd245e9e-20221104
+      scheduler: 0.24.0-next-4bd245e9e-20221104
     dev: false
 
-  /react-error-boundary/3.1.4_f6630db1e671a3c9301025abb8bbce1c:
+  /react-error-boundary/3.1.4_18eabe7b97f85e4a13f5029e0ab76971:
     resolution: {integrity: sha512-uM9uPzZJTF6wRQORmSrvOIgt4lJ9MC1sNgEOj2XGsDTRE4kmpWxg7ENK9EWNKJRMAOY9z0MuF4yIfl6gp4sotA==}
     engines: {node: '>=10', npm: '>=6'}
     peerDependencies:
       react: '>=16.13.1'
     dependencies:
       '@babel/runtime': 7.20.0
-      react: 18.3.0-next-28a574ea8-20221027
+      react: 18.3.0-next-4bd245e9e-20221104
     dev: false
 
-  /react-server-dom-webpack/18.3.0-next-28a574ea8-20221027_d1634c9418cc936aca097149c56072a8:
-    resolution: {integrity: sha512-WNVi7+dD3QfOOyHpy/TQIxkZiYBH01maBQzQ7rIb5cUJAF7asM0dldUOUMggDUGYjpq0mNbLEu9JnB9tQw0HEQ==}
+  /react-server-dom-webpack/18.3.0-next-4bd245e9e-20221104_7620e6548e5cbebbf9ec8f14bbc734b8:
+    resolution: {integrity: sha512-LbUvj0rNmeUUfu0nJdffCZuRgYCN4wZlUaEqSo/8LOZN2ZLB9dPUNYXhWVg8JXI9zv3+4EQx96wUEYXG39aR6A==}
     engines: {node: '>=0.10.0'}
     peerDependencies:
-      react: 18.3.0-next-28a574ea8-20221027
-      react-dom: 18.3.0-next-28a574ea8-20221027
+      react: 18.3.0-next-4bd245e9e-20221104
+      react-dom: 18.3.0-next-4bd245e9e-20221104
       webpack: ^5.59.0
     dependencies:
       acorn: 6.4.2
       loose-envify: 1.4.0
       neo-async: 2.6.2
-      react: 18.3.0-next-28a574ea8-20221027
-      react-dom: 18.3.0-next-28a574ea8-20221027_f6630db1e671a3c9301025abb8bbce1c
+      react: 18.3.0-next-4bd245e9e-20221104
+      react-dom: 18.3.0-next-4bd245e9e-20221104_18eabe7b97f85e4a13f5029e0ab76971
       webpack: 5.64.4_webpack-cli@4.9.1
     dev: false
 
-  /react/18.3.0-next-28a574ea8-20221027:
-    resolution: {integrity: sha512-FGjLFqLgevCgMKpFHW64KVihgmpsudHljyi3fxH7jPr2TpEJ+SpypjP1DmJZcKwooCFzBA0vskcsphAnUjgTGg==}
+  /react/18.3.0-next-4bd245e9e-20221104:
+    resolution: {integrity: sha512-0h3LOMoAmW/BZMYFXgx8/wnlSKH74cOSOsPQZdLaPpOvn0ZiY2lQ1Dvlb2DzKufBKEBXTX00uV2RFirXdAEI+g==}
     engines: {node: '>=0.10.0'}
     dependencies:
       loose-envify: 1.4.0
@@ -4115,8 +4115,8 @@ packages:
       postcss: 8.4.18
     dev: false
 
-  /scheduler/0.24.0-next-28a574ea8-20221027:
-    resolution: {integrity: sha512-Z5FHoXJZ3rVzTjxhlI8Gjqp8+RzJzT+gva2mKJkgBZi4ZtsJ/rE4g5gmys/+MAcObHR4peq6gqnwHvBQuXsC7A==}
+  /scheduler/0.24.0-next-4bd245e9e-20221104:
+    resolution: {integrity: sha512-RhKSDDq8S3uqdB+w3FQNo8KdpPBTwtiZUpvsjycFgZIkYHfiR/bt2gkXb2eO9irJ+ubeK9iTrF6+4LnPTZ+3xg==}
     dependencies:
       loose-envify: 1.4.0
     dev: false
