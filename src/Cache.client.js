@@ -26,17 +26,22 @@ function hydrate() {
 
 export function useServerResponse({key, cache}) {
   const cbProm = useCallback(() => {
-    let p = window.__rsc
-      ? hydrate()
-      : createFromFetch(fetch('/react?location=' + encodeURIComponent(key)));
+    let p =
+      window.__rsc && window.__rsckey === location.pathname + location.search
+        ? hydrate()
+        : createFromFetch(fetch('/react?location=' + encodeURIComponent(key)));
     return Promise.resolve(p);
   }, [key]);
+
+  if (cache.has(key)) {
+    return cache.get(key);
+  }
 
   /**
    * @TODO
    * replace with `React.use(cbProm)` when it's available...
    */
-  const el = usePromise(cbProm);
+  const el = usePromise(key, cbProm);
   cache.set(key, el);
   return el;
 }

@@ -27,16 +27,16 @@ function wrapPromise(promise) {
   return {read};
 }
 
-let _promise;
-let _suspendedPromise;
+let _promiseMap = {};
+let _suspendedPromiseMap = {};
 
-function usePromise(cb) {
-  if (!_promise) {
-    _promise = cb();
-    _suspendedPromise = wrapPromise(_promise);
+function usePromise(key, cb) {
+  if (!_promiseMap[key]) {
+    _promiseMap[key] = cb();
+    _suspendedPromiseMap[key] = wrapPromise(_promiseMap[key]);
   }
 
-  return _suspendedPromise.read();
+  return _suspendedPromiseMap[key].read();
 }
 
 export default usePromise;

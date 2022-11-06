@@ -13,6 +13,10 @@ export default function CommentView() {
     setCount((c) => c + 1);
   };
 
+  const goToRoute2 = () => {
+    history.pushState({}, null, '/route2');
+  };
+
   return (
     <div
       style={{
@@ -20,6 +24,7 @@ export default function CommentView() {
       }}>
       <div>CommentView. client component. count:{count}</div>
       <button onClick={handleClick}>click</button>
+      <button onClick={goToRoute2}>go to /route2</button>
     </div>
   );
 }

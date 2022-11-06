@@ -70,7 +70,6 @@ if (!global.__webpack_require__) {
     }
 
     const Comp = CompCb();
-    console.log(`>>Request to client component success: ${id}`);
     return Comp;
   };
 }
@@ -109,20 +108,22 @@ async function runServer() {
       });
   }
 
-  function getStream(res, props) {
+  function getStream(req, res, props) {
     if (process.env.NODE_ENV === 'development') {
       reactManifest = loadReactManifest();
     }
     const moduleMap = JSON.parse(reactManifest);
     const stream = renderToReadableStream(
-      React.createElement(ReactApp, props),
+      React.createElement(ReactApp, {
+        path: props.path,
+      }),
       moduleMap
     );
     return stream;
   }
 
-  async function renderReactTree(res, props) {
-    const stream = getStream(res, props);
+  async function renderReactTree(req, res, props) {
+    const stream = getStream(req, res, props);
     const reader = await stream.getReader();
     function readForward() {
       reader.read().then(({done, value}) => {
@@ -138,9 +139,9 @@ async function runServer() {
   }
 
   function sendResponse(req, res, redirectToId) {
-    // res.set('X-Location', JSON.stringify(location));
-    renderReactTree(res, {
-      // selectedId: location.selectedId,
+    res.set('X-Location', JSON.stringify(req.query.location));
+    renderReactTree(req, res, {
+      path: req.query.location,
     });
   }
 
@@ -154,18 +155,20 @@ async function runServer() {
     }, req.params.ms);
   });
 
+  app.use(express.static('build', {index: false}));
+  app.use(express.static('public', {index: false}));
+
   app.get(
-    '/',
-    handleErrors(async function(_req, res) {
+    '*',
+    handleErrors(async function(req, res, next) {
       if (process.env.NODE_ENV === 'development') {
         html = loadHTML();
       }
 
       const segments = html.split(`<div id="root">`);
 
-      console.log(_req.path);
       console.log('>>getStream:renderToReadableStream');
-      const stream = getStream(res, {});
+      const stream = getStream(req, res, {path: req.path});
 
       const [renderStream, forwardStream] = readableStreamTee(stream);
       const forwardReader = forwardStream.getReader();
@@ -190,7 +193,10 @@ async function runServer() {
           res.write(
             `<script type="text/javascript">window.__rsc=${JSON.stringify(
               hydratedStr
-            )}</script>`
+            )}</script>\n
+            <script type="text/javascript">window.__rsckey="${
+              req.originalUrl
+            }";</script>`
           );
           res.write(segments[1]);
         },
@@ -203,9 +209,6 @@ async function runServer() {
       });
     })
   );
-
-  app.use(express.static('build'));
-  app.use(express.static('public'));
 }
 
 async function waitForWebpack() {
