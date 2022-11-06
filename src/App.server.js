@@ -9,8 +9,8 @@ export default function App() {
     <div className="main">
       <div>Hello, server component here</div>
       <FeedView />
-      <CommentView />
       <Suspense fallback={<div>loading banner...</div>}>
+        <CommentView />
         <BannerView></BannerView>
       </Suspense>
     </div>

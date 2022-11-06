@@ -32,7 +32,8 @@ const {
   getHydratedReactEl,
   readableStreamTee,
   handleErrors,
-} = require('./util');
+} = require('./utils/util');
+const {loadCM, loadHTML, loadReactManifest} = require('./utils/manifest');
 
 /**
  * Our root App
@@ -49,32 +50,8 @@ let CM = {};
 let html = '';
 let reactManifest;
 
-function loadCM() {
-  try {
-    CM = require('../build/client-manifest').default;
-  } catch (e) {
-    console.error('ERROR-CM:', e);
-  }
-}
-
-function loadHTML() {
-  const html = readFileSync(
-    path.resolve(__dirname, '../build/index.html'),
-    'utf8'
-  );
-  return html;
-}
-
-function loadReactManifest() {
-  const manifest = readFileSync(
-    path.resolve(__dirname, '../build/react-client-manifest.json'),
-    'utf8'
-  );
-  return manifest;
-}
-
 if (process.env.NODE_ENV === 'production') {
-  loadCM();
+  CM = loadCM();
   html = loadHTML();
   reactManifest = loadReactManifest();
 }
@@ -132,44 +109,7 @@ async function runServer() {
       });
   }
 
-  app.get(
-    '/',
-    handleErrors(async function(_req, res) {
-      if (process.env.NODE_ENV === 'development') {
-        html = loadHTML();
-      }
-
-      const segments = html.split(`<div id="root">`);
-
-      console.log('>>getStream:renderToReadableStream');
-      const stream = await getStream(res, {});
-
-      const [renderStream, forwardStream] = readableStreamTee(stream);
-      await renderStream.allReady;
-      console.log('>>createFromReadableStream');
-      const reactEl = await createFromReadableStream(renderStream);
-
-      const forwardReader = forwardStream.getReader();
-      console.log('>>getHydratedReactEl');
-      const hydratedStr = await getHydratedReactEl(forwardReader);
-
-      console.log('>>renderToPipeableStream\n');
-      const ssrStream = renderToPipeableStream(reactEl, {
-        onAllReady() {
-          res.write(segments[0] + `<div id="root">`);
-          ssrStream.pipe(res);
-          res.write(
-            `<script type="text/javascript">window.__rsc=${JSON.stringify(
-              hydratedStr
-            )}</script>`
-          );
-          res.write(segments[1]);
-        },
-      });
-    })
-  );
-
-  async function getStream(res, props) {
+  function getStream(res, props) {
     if (process.env.NODE_ENV === 'development') {
       reactManifest = loadReactManifest();
     }
@@ -182,7 +122,7 @@ async function runServer() {
   }
 
   async function renderReactTree(res, props) {
-    const stream = await getStream(res, props);
+    const stream = getStream(res, props);
     const reader = await stream.getReader();
     function readForward() {
       reader.read().then(({done, value}) => {
@@ -198,15 +138,9 @@ async function runServer() {
   }
 
   function sendResponse(req, res, redirectToId) {
-    const location = JSON.parse(req.query.location);
-    if (redirectToId) {
-      location.selectedId = redirectToId;
-    }
-    res.set('X-Location', JSON.stringify(location));
+    // res.set('X-Location', JSON.stringify(location));
     renderReactTree(res, {
-      selectedId: location.selectedId,
-      isEditing: location.isEditing,
-      searchText: location.searchText,
+      // selectedId: location.selectedId,
     });
   }
 
@@ -219,6 +153,56 @@ async function runServer() {
       res.json({ok: true});
     }, req.params.ms);
   });
+
+  app.get(
+    '/',
+    handleErrors(async function(_req, res) {
+      if (process.env.NODE_ENV === 'development') {
+        html = loadHTML();
+      }
+
+      const segments = html.split(`<div id="root">`);
+
+      console.log(_req.path);
+      console.log('>>getStream:renderToReadableStream');
+      const stream = getStream(res, {});
+
+      const [renderStream, forwardStream] = readableStreamTee(stream);
+      const forwardReader = forwardStream.getReader();
+
+      console.log('>>getHydratedReactEl');
+      console.log('>>createFromReadableStream');
+
+      const [hydratedStr, reactEl] = await Promise.all([
+        getHydratedReactEl(forwardReader, res),
+        createFromReadableStream(renderStream),
+      ]);
+
+      console.log('>>renderToPipeableStream\n');
+      const ssrStream = renderToPipeableStream(reactEl, {
+        onShellReady() {
+          res.statusCode = 200;
+          res.setHeader('Content-type', 'text/html');
+          res.write(segments[0] + `<div id="root">`);
+          ssrStream.pipe(res);
+        },
+        onAllReady() {
+          res.write(
+            `<script type="text/javascript">window.__rsc=${JSON.stringify(
+              hydratedStr
+            )}</script>`
+          );
+          res.write(segments[1]);
+        },
+        onError(err) {
+          console.log('>> ERR:SSR:', err);
+        },
+        onShellError(err) {
+          console.log('>> ERR-SHELL:SSR:', err);
+        },
+      });
+    })
+  );
 
   app.use(express.static('build'));
   app.use(express.static('public'));
@@ -263,6 +247,6 @@ const wait = async (ms) => {
     await waitForWebpack();
     await wait(1000);
   }
-  loadCM();
+  CM = loadCM();
   runServer();
 })();
