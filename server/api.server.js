@@ -124,7 +124,7 @@ async function runServer() {
 
   async function renderReactTree(req, res, props) {
     const stream = getStream(req, res, props);
-    const reader = await stream.getReader();
+    const reader = stream.getReader();
     function readForward() {
       reader.read().then(({done, value}) => {
         if (done) {
@@ -132,6 +132,7 @@ async function runServer() {
         } else {
           let responsePartial = decodeText(value);
           res.write(responsePartial);
+          readForward();
         }
       });
     }
