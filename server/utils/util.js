@@ -6,13 +6,13 @@ function decodeText(input, textDecoder) {
 
 async function getHydratedReactEl(forwardReader) {
   return new Promise((resolve) => {
-    let responsePartial;
+    let responsePartial = '';
     function readForward() {
       forwardReader.read().then(({done, value}) => {
         if (done) {
           resolve(responsePartial);
         } else {
-          responsePartial = decodeText(value);
+          responsePartial += decodeText(value);
           readForward();
         }
       });
